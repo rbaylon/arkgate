@@ -2,20 +2,20 @@
 package planmodel
 
 import (
+	"github.com/rbaylon/arkgate/modules/subs/model"
 	"gorm.io/gorm"
-  "github.com/rbaylon/arkgate/modules/subs/model"
 	"log"
 	"net/http"
 )
 
 type Plan struct {
-	ID               uint64    `gorm:"primaryKey" json:"id" bson:"id"`
-	Name             string    `json:"planname" bson:"planname"`
-	Downspeed        int       `json:"downspeed" bson:"downspeed"`
-	Upspeed          int       `json:"upspeed" bson:"upspeed"`
-	Burstspeed       int       `json:"burstspeed" bson:"burstspeed"`
-  Duration         int       `json:"duration" bson:"duration"`
-  Subs             []submodel.Sub `gorm:"foreignKey:ID"`
+	gorm.Model
+	Name       string `json:"planname" bson:"planname"`
+	Downspeed  int    `json:"downspeed" bson:"downspeed"`
+	Upspeed    int    `json:"upspeed" bson:"upspeed"`
+	Burstspeed int    `json:"burstspeed" bson:"burstspeed"`
+	Duration   int    `json:"duration" bson:"duration"`
+	Subs       []submodel.Sub
 }
 
 // MigrateDB - Create the table if not exist in DB

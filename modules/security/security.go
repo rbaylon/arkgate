@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"encoding/base64"
+	"github.com/go-chi/render"
 	"github.com/rbaylon/arkgate/database"
 	"github.com/rbaylon/arkgate/modules/users/controller"
 	"github.com/rbaylon/arkgate/utils"
-	"github.com/go-chi/render"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-var secretKey = []byte(database.GetEnvVariable("SANG_SECRET"))
+var secretKey = []byte(database.GetEnvVariable("APP_SECRET"))
 
 type Token struct {
 	Name string

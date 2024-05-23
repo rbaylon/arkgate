@@ -26,12 +26,11 @@ import (
 
 func main() {
 	var (
-		sang_ip   = database.GetEnvVariable("SANG_IP")
-		sang_port = database.GetEnvVariable("SANG_PORT")
-		//sang_secret = database.GetEnvVariable("SANG_SECRET")
+		app_ip   = database.GetEnvVariable("APP_IP")
+		app_port = database.GetEnvVariable("APP_PORT")
 	)
 
-	log.Printf("Sang Socket: %s:%s\n", sang_ip, sang_port)
+	log.Printf("Sang Socket: %s:%s\n", app_ip, app_port)
 
 	db, err := database.ConnectToDB()
 	if err != nil {
@@ -57,5 +56,5 @@ func main() {
   r.Mount("/api/v1/plans", planroutes.PlanRouter(db))
   r.Mount("/api/v1/subs", subroutes.SubRouter(db))
 
-	http.ListenAndServe(fmt.Sprintf("%s:%s", sang_ip, sang_port), r)
+	http.ListenAndServe(fmt.Sprintf("%s:%s", app_ip, app_port), r)
 }

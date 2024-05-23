@@ -27,13 +27,13 @@ package subroutes
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/jwtauth/v5"
+	"github.com/go-chi/render"
 	"github.com/rbaylon/arkgate/modules/security"
 	"github.com/rbaylon/arkgate/modules/subs/controller"
 	"github.com/rbaylon/arkgate/modules/subs/model"
 	"github.com/rbaylon/arkgate/utils"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/jwtauth/v5"
-	"github.com/go-chi/render"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
@@ -77,7 +77,7 @@ func SubRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		sub.ID = uint64(id)
+		sub.ID = uint(id)
 		err = subcontroller.UpdateSub(db, sub)
 		if err == nil {
 			render.JSON(w, r, sub)
@@ -109,7 +109,7 @@ func SubRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		sub.ID = uint64(id)
+		sub.ID = uint(id)
 		err = subcontroller.DeleteSub(db, sub)
 		if err == nil {
 			render.JSON(w, r, sub)

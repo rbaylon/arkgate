@@ -27,13 +27,13 @@ package planroutes
 
 import (
 	"fmt"
-	"github.com/rbaylon/arkgate/modules/security"
-	"github.com/rbaylon/arkgate/modules/plans/controller"
-	"github.com/rbaylon/arkgate/modules/plans/model"
-	"github.com/rbaylon/arkgate/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
+	"github.com/rbaylon/arkgate/modules/plans/controller"
+	"github.com/rbaylon/arkgate/modules/plans/model"
+	"github.com/rbaylon/arkgate/modules/security"
+	"github.com/rbaylon/arkgate/utils"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
@@ -77,7 +77,7 @@ func PlanRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		plan.ID = uint64(id)
+		plan.ID = uint(id)
 		err = plancontroller.UpdatePlan(db, plan)
 		if err == nil {
 			render.JSON(w, r, plan)
@@ -109,7 +109,7 @@ func PlanRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		plan.ID = uint64(id)
+		plan.ID = uint(id)
 		err = plancontroller.DeletePlan(db, plan)
 		if err == nil {
 			render.JSON(w, r, plan)

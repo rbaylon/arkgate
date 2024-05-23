@@ -2,6 +2,7 @@
 package subcontroller
 
 import (
+	"github.com/rbaylon/arkgate/modules/plans/controller"
 	"github.com/rbaylon/arkgate/modules/subs/model"
 	"gorm.io/gorm"
 )
@@ -42,6 +43,13 @@ func CreateSub(db *gorm.DB, sub *submodel.Sub) error {
 	if result.Error != nil {
 		return result.Error
 	}
+	planid := int(sub.PlanID)
+	plan, err := plancontroller.GetPlanByID(db, planid)
+	if err != nil {
+		return err
+	}
+	db.Model(plan).Association("Subs").Append(sub)
+	db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(plan)
 	return nil
 }
 

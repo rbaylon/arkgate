@@ -9,7 +9,7 @@ import (
 // GetPlans - get all plan records from database
 func GetPlans(db *gorm.DB) ([]planmodel.Plan, error) {
 	var plans []planmodel.Plan
-	result := db.Find(&plans)
+	result := db.Preload("Subs").Find(&plans)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -19,7 +19,7 @@ func GetPlans(db *gorm.DB) ([]planmodel.Plan, error) {
 // GetPlanByID - get plan by primary key from database
 func GetPlanByID(db *gorm.DB, ID int) (*planmodel.Plan, error) {
 	var plan planmodel.Plan
-	result := db.First(&plan, ID)
+	result := db.Preload("Subs").First(&plan, ID)
 	if result.Error != nil {
 		return nil, result.Error
 	}
