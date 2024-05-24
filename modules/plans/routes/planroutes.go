@@ -1,4 +1,4 @@
-// Package planroutes - SANG API Plan module
+// Package planroutes - Arkgate API Plan module
 //
 //	Module Routes:
 //	  /api/v1/plans

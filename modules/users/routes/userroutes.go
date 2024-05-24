@@ -1,4 +1,4 @@
-// Package userroutes - SANG API User module
+// Package userroutes - Arkgate API User module
 //
 //	Module Routes:
 //	  /api/v1/users

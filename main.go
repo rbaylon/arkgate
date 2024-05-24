@@ -18,6 +18,10 @@ import (
   "github.com/rbaylon/arkgate/modules/plans/routes"
   "github.com/rbaylon/arkgate/modules/subs/model"
   "github.com/rbaylon/arkgate/modules/subs/routes"
+  "github.com/rbaylon/arkgate/modules/ip/model"
+  "github.com/rbaylon/arkgate/modules/ip/routes"
+  "github.com/rbaylon/arkgate/modules/interface/model"
+  "github.com/rbaylon/arkgate/modules/interface/routes"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"log"
@@ -41,6 +45,8 @@ func main() {
 	usermodel.MigrateDB(db)
   planmodel.MigrateDB(db)
   submodel.MigrateDB(db)
+  ipmodel.MigrateDB(db)
+  interfacemodel.MigrateDB(db)
 
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
@@ -55,6 +61,8 @@ func main() {
 	r.Mount("/api/v1/users", userroutes.UserRouter(db))
   r.Mount("/api/v1/plans", planroutes.PlanRouter(db))
   r.Mount("/api/v1/subs", subroutes.SubRouter(db))
+  r.Mount("/api/v1/ips", iproutes.IpRouter(db))
+  r.Mount("/api/v1/interfaces", interfaceroutes.InterfaceRouter(db))
 
 	http.ListenAndServe(fmt.Sprintf("%s:%s", app_ip, app_port), r)
 }

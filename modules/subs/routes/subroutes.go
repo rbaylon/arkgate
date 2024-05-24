@@ -1,4 +1,4 @@
-// Package subroutes - SANG API Sub module
+// Package subroutes - Arkgate API Sub module
 //
 //	Module Routes:
 //	  /api/v1/subs
