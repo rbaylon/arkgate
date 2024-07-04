@@ -2,8 +2,8 @@
 package ipcontroller
 
 import (
-	"github.com/rbaylon/arkgate/modules/interface/controller"
-	"github.com/rbaylon/arkgate/modules/ip/model"
+	ifacecontroller "github.com/rbaylon/arkgate/modules/interface/controller"
+	ipmodel "github.com/rbaylon/arkgate/modules/ip/model"
 	"gorm.io/gorm"
 )
 
@@ -43,13 +43,15 @@ func CreateIp(db *gorm.DB, ip *ipmodel.Ip) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	ifaceid := int(ip.InterfaceID)
-	iface, err := ifacecontroller.GetInterfaceByID(db, ifaceid)
-	if err != nil {
-		return err
+	if int(ip.InterfaceID) > 0 {
+		ifaceid := int(ip.InterfaceID)
+		iface, err := ifacecontroller.GetInterfaceByID(db, ifaceid)
+		if err != nil {
+			return err
+		}
+		db.Model(iface).Association("Ips").Append(ip)
+		db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(iface)
 	}
-	db.Model(iface).Association("Ips").Append(ip)
-	db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(iface)
 	return nil
 }
 

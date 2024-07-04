@@ -1,4 +1,4 @@
-// Package iproutes - Arkgate API Ip module
+// Package firewallroutes - Arkgate API Firewall module
 //
 //	Module Routes:
 //	  /api/v1/ips
@@ -23,30 +23,31 @@
 //	    Return-Status: 200 on Success
 //	                   500 on Error
 //	                   400 on Bad request
-package iproutes
+package firewallroutes
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
+	firewallcontroller "github.com/rbaylon/arkgate/modules/firewall/controller"
+	firewallmodel "github.com/rbaylon/arkgate/modules/firewall/model"
 	"github.com/rbaylon/arkgate/modules/security"
-	"github.com/rbaylon/arkgate/modules/ip/controller"
-	"github.com/rbaylon/arkgate/modules/ip/model"
 	"github.com/rbaylon/arkgate/utils"
 	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 var tokenAuth *jwtauth.JWTAuth
 
-func IpRouter(db *gorm.DB) chi.Router {
+func FirewallRouter(db *gorm.DB) chi.Router {
 	r := chi.NewRouter()
 	r.Use(security.TokenRequired)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		res, errdb := ipcontroller.GetIps(db)
+		res, errdb := firewallcontroller.GetFirewalls(db)
 		if errdb != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(errdb, "DB error", http.StatusInternalServerError))
 			return
@@ -59,7 +60,7 @@ func IpRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid ip ID %s", chi.URLParam(r, "ipId")), http.StatusBadRequest))
 			return
 		}
-		ip, err := ipcontroller.GetIpByID(db, id)
+		ip, err := firewallcontroller.GetFirewallByID(db, id)
 		if err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
 			return
@@ -72,13 +73,13 @@ func IpRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid ip ID %s", chi.URLParam(r, "ipId")), http.StatusBadRequest))
 			return
 		}
-		ip := &ipmodel.Ip{}
+		ip := &firewallmodel.Firewall{}
 		if err = render.Bind(r, ip); err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
 		ip.ID = uint(id)
-		err = ipcontroller.UpdateIp(db, ip)
+		err = firewallcontroller.UpdateFirewall(db, ip)
 		if err == nil {
 			render.JSON(w, r, ip)
 			return
@@ -86,12 +87,12 @@ func IpRouter(db *gorm.DB) chi.Router {
 		render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Error updating record for ip  ID %s", chi.URLParam(r, "ipId")), http.StatusBadRequest))
 	})
 	r.Post("/create", func(w http.ResponseWriter, r *http.Request) {
-		ip := &ipmodel.Ip{}
+		ip := &firewallmodel.Firewall{}
 		if err := render.Bind(r, ip); err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		err := ipcontroller.CreateIp(db, ip)
+		err := firewallcontroller.CreateFirewall(db, ip)
 		if err == nil {
 			render.JSON(w, r, ip)
 			return
@@ -104,13 +105,13 @@ func IpRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid ip ID %s", chi.URLParam(r, "ipId")), http.StatusBadRequest))
 			return
 		}
-		ip := &ipmodel.Ip{}
+		ip := &firewallmodel.Firewall{}
 		if err = render.Bind(r, ip); err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
 		ip.ID = uint(id)
-		err = ipcontroller.DeleteIp(db, ip)
+		err = firewallcontroller.DeleteFirewall(db, ip)
 		if err == nil {
 			render.JSON(w, r, ip)
 			return

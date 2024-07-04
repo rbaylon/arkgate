@@ -16,6 +16,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/rbaylon/arkgate/database"
+	firewallmodel "github.com/rbaylon/arkgate/modules/firewall/model"
+	firewallroutes "github.com/rbaylon/arkgate/modules/firewall/routes"
 	interfacemodel "github.com/rbaylon/arkgate/modules/interface/model"
 	interfaceroutes "github.com/rbaylon/arkgate/modules/interface/routes"
 	ipmodel "github.com/rbaylon/arkgate/modules/ip/model"
@@ -35,7 +37,7 @@ func main() {
 		app_port = database.GetEnvVariable("APP_PORT")
 	)
 
-	log.Printf("Sang Socket: %s:%s\n", app_ip, app_port)
+	log.Printf("Arkgate Socket: %s:%s\n", app_ip, app_port)
 
 	db, err := database.ConnectToDB()
 	if err != nil {
@@ -48,6 +50,7 @@ func main() {
 	submodel.MigrateDB(db)
 	ipmodel.MigrateDB(db)
 	interfacemodel.MigrateDB(db)
+	firewallmodel.MigrateDB(db)
 
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
@@ -64,6 +67,7 @@ func main() {
 	r.Mount("/api/v1/subs", subroutes.SubRouter(db))
 	r.Mount("/api/v1/ips", iproutes.IpRouter(db))
 	r.Mount("/api/v1/interfaces", interfaceroutes.InterfaceRouter(db))
+	r.Mount("/api/v1/firewall", firewallroutes.FirewallRouter(db))
 
 	http.ListenAndServe(fmt.Sprintf("%s:%s", app_ip, app_port), r)
 }

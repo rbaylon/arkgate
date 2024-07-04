@@ -2,18 +2,19 @@
 package usermodel
 
 import (
-	"gorm.io/gorm"
 	"log"
 	"net/http"
-  "github.com/rbaylon/arkgate/database"
+
+	"github.com/rbaylon/arkgate/database"
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID               uint64    `gorm:"primaryKey" json:"id" bson:"id"`
-	Username         string    `json:"username" bson:"username"`
-	Password         string    `json:"password" bson:"password"`
-	Firstname        string    `json:"firstname" bson:"firstname"`
-	Lastname         string    `json:"lastname" bson:"lastname"`
+	ID        uint64 `gorm:"primaryKey" json:"id" bson:"id"`
+	Username  string `json:"username" bson:"username"`
+	Password  string `json:"password" bson:"password"`
+	Firstname string `json:"firstname" bson:"firstname"`
+	Lastname  string `json:"lastname" bson:"lastname"`
 }
 
 // MigrateDB - Create the table if not exist in DB
@@ -22,23 +23,23 @@ func MigrateDB(db *gorm.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
-  var user User
-  result := db.Where("Username = ?", "admin").First(&user)
-  if result.Error != nil {
-    log.Println("Starting app for the first time.")
-    var (
-      uname = database.GetEnvVariable("APP_ADMIN")
-      upass = database.GetEnvVariable("APP_ADMIN_PW")
-    )
-    user.Username = uname
-    user.Password = upass
-    user.Firstname = "Admin"
-    user.Lastname = "istrator"
-    res := db.Create(&user)
-    if res == nil {
-      log.Fatal("Failed to create admin user")
-    }
-  }
+	var user User
+	result := db.Where("Username = ?", "admin").First(&user)
+	if result.Error != nil {
+		log.Println("Starting app for the first time.")
+		var (
+			uname = database.GetEnvVariable("APP_ADMIN")
+			upass = database.GetEnvVariable("APP_ADMIN_PW")
+		)
+		user.Username = uname
+		user.Password = upass
+		user.Firstname = "Admin"
+		user.Lastname = "istrator"
+		res := db.Create(&user)
+		if res == nil {
+			log.Fatal("Failed to create admin user")
+		}
+	}
 }
 
 // Bind interface as required by go-chi/render

@@ -2,14 +2,14 @@ package security
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt"
 	"net/http"
 	"time"
 
-	"encoding/base64"
+	"github.com/golang-jwt/jwt"
+
 	"github.com/go-chi/render"
 	"github.com/rbaylon/arkgate/database"
-	"github.com/rbaylon/arkgate/modules/users/controller"
+	usercontroller "github.com/rbaylon/arkgate/modules/users/controller"
 	"github.com/rbaylon/arkgate/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -41,10 +41,9 @@ func Login(db *gorm.DB) http.HandlerFunc {
 				render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
 				return
 			}
-			bytes, _ := base64.RawURLEncoding.DecodeString(user.Password)
 
-			// If password is plaintext base64 encoded only, use password encryption and store it back to db
-			if string(bytes) == password {
+			// If password is plaintext only, use password encryption and store it back to db
+			if user.Password == password {
 				encryptedpassword, err := HashPassword(password)
 				if err != nil {
 					render.Render(w, r, utils.ErrInvalidRequest(err, "Bcrypt Error encrypting password.", http.StatusInternalServerError))
