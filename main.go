@@ -1,11 +1,17 @@
-// Package main - Smart App Next Generation API.
+// Package main - Arkgate REST API.
 //
 //	Core Routes:
+//		/
+//      Method: GET
+//      Headers: NONE
+//      Return: Basic page for health check only
+//      Return-Status: 200
 //	  /api/v1/login
 //	    Method: GET
 //	    Headers: Authorization Basic
 //	    Return: JSON object with JWT
 //	    Return-Status: 200
+
 package main
 
 import (
