@@ -27,16 +27,17 @@ package userroutes
 
 import (
 	"fmt"
-	"github.com/rbaylon/arkgate/modules/security"
-	"github.com/rbaylon/arkgate/modules/users/controller"
-	"github.com/rbaylon/arkgate/modules/users/model"
-	"github.com/rbaylon/arkgate/utils"
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
+	"github.com/rbaylon/arkgate/modules/security"
+	usercontroller "github.com/rbaylon/arkgate/modules/users/controller"
+	usermodel "github.com/rbaylon/arkgate/modules/users/model"
+	"github.com/rbaylon/arkgate/utils"
 	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 var tokenAuth *jwtauth.JWTAuth
@@ -77,7 +78,7 @@ func UserRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		user.ID = uint64(id)
+		user.ID = uint(id)
 		err = usercontroller.UpdateUser(db, user)
 		if err == nil {
 			render.JSON(w, r, user)
@@ -109,7 +110,7 @@ func UserRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		user.ID = uint64(id)
+		user.ID = uint(id)
 		err = usercontroller.DeleteUser(db, user)
 		if err == nil {
 			render.JSON(w, r, user)
