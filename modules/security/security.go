@@ -9,10 +9,9 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/rbaylon/arkgate/database"
-	usercontroller "github.com/rbaylon/arkgate/modules/users/controller"
+	usermodel "github.com/rbaylon/arkgate/modules/users/model"
 	"github.com/rbaylon/arkgate/utils"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 var secretKey = []byte(database.GetEnvVariable("APP_SECRET"))
@@ -32,11 +31,11 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func Login(db *gorm.DB) http.HandlerFunc {
+func Login(db usermodel.Crud) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if ok {
-			user, err := usercontroller.GetUserByUsername(db, username)
+			user, err := db.GetByUsername(username)
 			if err != nil {
 				render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
 				return
@@ -49,7 +48,7 @@ func Login(db *gorm.DB) http.HandlerFunc {
 					render.Render(w, r, utils.ErrInvalidRequest(err, "Bcrypt Error encrypting password.", http.StatusInternalServerError))
 				}
 				user.Password = encryptedpassword
-				err = usercontroller.UpdateUser(db, user)
+				err = db.Update(user)
 				if err != nil {
 					render.Render(w, r, utils.ErrInvalidRequest(err, "DB update error", http.StatusInternalServerError))
 					return

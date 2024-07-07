@@ -23,7 +23,8 @@ import (
 	"github.com/go-chi/render"
 	"github.com/rbaylon/arkgate/database"
 	firewallmodel "github.com/rbaylon/arkgate/modules/firewall/model"
-	firewallroutes "github.com/rbaylon/arkgate/modules/firewall/routes"
+	firewallroutes "github.com/rbaylon/arkgate/modules/firewall/routes/firewall"
+	queueroutes "github.com/rbaylon/arkgate/modules/firewall/routes/queue"
 	interfacemodel "github.com/rbaylon/arkgate/modules/interface/model"
 	interfaceroutes "github.com/rbaylon/arkgate/modules/interface/routes"
 	ipmodel "github.com/rbaylon/arkgate/modules/ip/model"
@@ -58,6 +59,8 @@ func main() {
 	interfacemodel.MigrateDB(db)
 	firewallmodel.MigrateDB(db)
 	userStore := usermodel.New(db)
+	firewallStore := firewallmodel.New(db)
+
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +68,7 @@ func main() {
 	})
 
 	// API login route - BasicAuth required, returns JWT access token
-	r.Get("/api/v1/login", security.Login(db))
+	r.Get("/api/v1/login", security.Login(userStore))
 
 	// Mount the user sub-router:
 	r.Mount("/api/v1/users", userroutes.UserRouter(userStore))
@@ -73,7 +76,8 @@ func main() {
 	r.Mount("/api/v1/subs", subroutes.SubRouter(db))
 	r.Mount("/api/v1/ips", iproutes.IpRouter(db))
 	r.Mount("/api/v1/interfaces", interfaceroutes.InterfaceRouter(db))
-	r.Mount("/api/v1/firewall", firewallroutes.FirewallRouter(db))
+	r.Mount("/api/v1/queue", queueroutes.QueueRouter(firewallStore))
+	r.Mount("/api/v1/firewall", firewallroutes.FirewallRouter(firewallStore))
 
 	http.ListenAndServe(fmt.Sprintf("%s:%s", app_ip, app_port), r)
 }

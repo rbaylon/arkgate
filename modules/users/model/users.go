@@ -54,6 +54,7 @@ type Crud interface {
 	Add(user *User) error
 	Update(user *User) error
 	Delete(user *User) error
+	GetByUsername(username string) (*User, error)
 }
 
 type Storage struct {
@@ -91,6 +92,15 @@ func (s *Storage) GetAll() ([]User, error) {
 func (s *Storage) GetById(id uint) (*User, error) {
 	var user User
 	result := s.DB.First(&user, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
+func (s *Storage) GetByUsername(username string) (*User, error) {
+	var user User
+	result := s.DB.Where("Username = ?", username).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}
