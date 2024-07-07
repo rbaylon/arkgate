@@ -34,20 +34,18 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 	"github.com/rbaylon/arkgate/modules/security"
-	usercontroller "github.com/rbaylon/arkgate/modules/users/controller"
 	usermodel "github.com/rbaylon/arkgate/modules/users/model"
 	"github.com/rbaylon/arkgate/utils"
-	"gorm.io/gorm"
 )
 
 var tokenAuth *jwtauth.JWTAuth
 
-func UserRouter(db *gorm.DB) chi.Router {
+func UserRouter(db usermodel.Crud) chi.Router {
 	r := chi.NewRouter()
 	r.Use(security.TokenRequired)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		res, errdb := usercontroller.GetUsers(db)
+		res, errdb := db.GetAll()
 		if errdb != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(errdb, "DB error", http.StatusInternalServerError))
 			return
@@ -60,7 +58,7 @@ func UserRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid user ID %s", chi.URLParam(r, "userId")), http.StatusBadRequest))
 			return
 		}
-		user, err := usercontroller.GetUserByID(db, id)
+		user, err := db.GetById(uint(id))
 		if err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
 			return
@@ -73,13 +71,13 @@ func UserRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid user ID %s", chi.URLParam(r, "userId")), http.StatusBadRequest))
 			return
 		}
-		user := &usermodel.User{}
-		if err = render.Bind(r, user); err != nil {
+		user := usermodel.User{}
+		if err = render.Bind(r, &user); err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
 		user.ID = uint(id)
-		err = usercontroller.UpdateUser(db, user)
+		err = db.Update(&user)
 		if err == nil {
 			render.JSON(w, r, user)
 			return
@@ -87,12 +85,12 @@ func UserRouter(db *gorm.DB) chi.Router {
 		render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Error updating record for user  ID %s", chi.URLParam(r, "userId")), http.StatusBadRequest))
 	})
 	r.Post("/create", func(w http.ResponseWriter, r *http.Request) {
-		user := &usermodel.User{}
-		if err := render.Bind(r, user); err != nil {
+		user := usermodel.User{}
+		if err := render.Bind(r, &user); err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		err := usercontroller.CreateUser(db, user)
+		err := db.Add(&user)
 		if err == nil {
 			render.JSON(w, r, user)
 			return
@@ -105,13 +103,13 @@ func UserRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid user ID %s", chi.URLParam(r, "userId")), http.StatusBadRequest))
 			return
 		}
-		user := &usermodel.User{}
-		if err = render.Bind(r, user); err != nil {
+		user := usermodel.User{}
+		if err = render.Bind(r, &user); err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
 		user.ID = uint(id)
-		err = usercontroller.DeleteUser(db, user)
+		err = db.Delete(&user)
 		if err == nil {
 			render.JSON(w, r, user)
 			return

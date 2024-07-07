@@ -57,7 +57,7 @@ func main() {
 	ipmodel.MigrateDB(db)
 	interfacemodel.MigrateDB(db)
 	firewallmodel.MigrateDB(db)
-
+	userStore := usermodel.New(db)
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func main() {
 	r.Get("/api/v1/login", security.Login(db))
 
 	// Mount the user sub-router:
-	r.Mount("/api/v1/users", userroutes.UserRouter(db))
+	r.Mount("/api/v1/users", userroutes.UserRouter(userStore))
 	r.Mount("/api/v1/plans", planroutes.PlanRouter(db))
 	r.Mount("/api/v1/subs", subroutes.SubRouter(db))
 	r.Mount("/api/v1/ips", iproutes.IpRouter(db))
