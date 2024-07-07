@@ -58,8 +58,11 @@ func main() {
 	ipmodel.MigrateDB(db)
 	interfacemodel.MigrateDB(db)
 	firewallmodel.MigrateDB(db)
+
 	userStore := usermodel.New(db)
 	firewallStore := firewallmodel.New(db)
+	ifaceStore := interfacemodel.New(db)
+	ipStore := ipmodel.New(db)
 
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
@@ -74,8 +77,8 @@ func main() {
 	r.Mount("/api/v1/users", userroutes.UserRouter(userStore))
 	r.Mount("/api/v1/plans", planroutes.PlanRouter(db))
 	r.Mount("/api/v1/subs", subroutes.SubRouter(db))
-	r.Mount("/api/v1/ips", iproutes.IpRouter(db))
-	r.Mount("/api/v1/interfaces", interfaceroutes.InterfaceRouter(db))
+	r.Mount("/api/v1/ips", iproutes.IpRouter(ipStore))
+	r.Mount("/api/v1/interfaces", interfaceroutes.InterfaceRouter(ifaceStore))
 	r.Mount("/api/v1/queue", queueroutes.QueueRouter(firewallStore))
 	r.Mount("/api/v1/firewall", firewallroutes.FirewallRouter(firewallStore))
 

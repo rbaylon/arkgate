@@ -27,26 +27,25 @@ package interfaceroutes
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
-	"github.com/rbaylon/arkgate/modules/interface/controller"
-	"github.com/rbaylon/arkgate/modules/interface/model"
+	interfacemodel "github.com/rbaylon/arkgate/modules/interface/model"
 	"github.com/rbaylon/arkgate/modules/security"
 	"github.com/rbaylon/arkgate/utils"
-	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 var tokenAuth *jwtauth.JWTAuth
 
-func InterfaceRouter(db *gorm.DB) chi.Router {
+func InterfaceRouter(db interfacemodel.Crud) chi.Router {
 	r := chi.NewRouter()
 	r.Use(security.TokenRequired)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		res, errdb := ifacecontroller.GetInterfaces(db)
+		res, errdb := db.GetAll()
 		if errdb != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(errdb, "DB error", http.StatusInternalServerError))
 			return
@@ -59,7 +58,7 @@ func InterfaceRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid iface ID %s", chi.URLParam(r, "ifaceId")), http.StatusBadRequest))
 			return
 		}
-		iface, err := ifacecontroller.GetInterfaceByID(db, id)
+		iface, err := db.GetById(uint(id))
 		if err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
 			return
@@ -78,7 +77,7 @@ func InterfaceRouter(db *gorm.DB) chi.Router {
 			return
 		}
 		iface.ID = uint(id)
-		err = ifacecontroller.UpdateInterface(db, iface)
+		err = db.Update(iface)
 		if err == nil {
 			render.JSON(w, r, iface)
 			return
@@ -91,7 +90,7 @@ func InterfaceRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		err := ifacecontroller.CreateInterface(db, iface)
+		err := db.Add(iface)
 		if err == nil {
 			render.JSON(w, r, iface)
 			return
@@ -110,7 +109,7 @@ func InterfaceRouter(db *gorm.DB) chi.Router {
 			return
 		}
 		iface.ID = uint(id)
-		err = ifacecontroller.DeleteInterface(db, iface)
+		err = db.Delete(iface)
 		if err == nil {
 			render.JSON(w, r, iface)
 			return

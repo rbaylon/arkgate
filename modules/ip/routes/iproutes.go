@@ -27,26 +27,27 @@ package iproutes
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
+	interfacemodel "github.com/rbaylon/arkgate/modules/interface/model"
+	ipmodel "github.com/rbaylon/arkgate/modules/ip/model"
 	"github.com/rbaylon/arkgate/modules/security"
-	"github.com/rbaylon/arkgate/modules/ip/controller"
-	"github.com/rbaylon/arkgate/modules/ip/model"
 	"github.com/rbaylon/arkgate/utils"
 	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 var tokenAuth *jwtauth.JWTAuth
 
-func IpRouter(db *gorm.DB) chi.Router {
+func IpRouter(db ipmodel.Crud) chi.Router {
 	r := chi.NewRouter()
 	r.Use(security.TokenRequired)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		res, errdb := ipcontroller.GetIps(db)
+		res, errdb := db.GetAll()
 		if errdb != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(errdb, "DB error", http.StatusInternalServerError))
 			return
@@ -59,7 +60,7 @@ func IpRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid ip ID %s", chi.URLParam(r, "ipId")), http.StatusBadRequest))
 			return
 		}
-		ip, err := ipcontroller.GetIpByID(db, id)
+		ip, err := db.GetById(uint(id))
 		if err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
 			return
@@ -78,7 +79,7 @@ func IpRouter(db *gorm.DB) chi.Router {
 			return
 		}
 		ip.ID = uint(id)
-		err = ipcontroller.UpdateIp(db, ip)
+		err = db.Update(ip)
 		if err == nil {
 			render.JSON(w, r, ip)
 			return
@@ -91,12 +92,24 @@ func IpRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		err := ipcontroller.CreateIp(db, ip)
-		if err == nil {
+		erripadd := db.Add(ip)
+		if int(ip.InterfaceID) > 0 {
+			ifaceid := uint(ip.InterfaceID)
+			dbconn := db.GetDB()
+			is := interfacemodel.New(dbconn)
+			iface, err := is.GetById(ifaceid)
+			if err == nil {
+				dbconn.Model(iface).Association("Ips").Append(ip)
+				dbconn.Session(&gorm.Session{FullSaveAssociations: true}).Updates(iface)
+			}
+			ip.InterfaceID = 0
+			erripadd = db.Update(ip)
+		}
+		if erripadd == nil {
 			render.JSON(w, r, ip)
 			return
 		}
-		render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
+		render.Render(w, r, utils.ErrInvalidRequest(erripadd, "DB error", http.StatusInternalServerError))
 	})
 	r.Delete("/{ipId}", func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.Atoi(chi.URLParam(r, "ipId"))
@@ -110,7 +123,7 @@ func IpRouter(db *gorm.DB) chi.Router {
 			return
 		}
 		ip.ID = uint(id)
-		err = ipcontroller.DeleteIp(db, ip)
+		err = db.Delete(ip)
 		if err == nil {
 			render.JSON(w, r, ip)
 			return
