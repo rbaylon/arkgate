@@ -2,7 +2,8 @@
 package usercontroller
 
 import (
-	"github.com/rbaylon/arkgate/modules/users/model"
+	usermodel "github.com/rbaylon/arkgate/modules/users/model"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -38,6 +39,11 @@ func GetUserByUsername(db *gorm.DB, username string) (*usermodel.User, error) {
 
 // CreateUser - create user
 func CreateUser(db *gorm.DB, user *usermodel.User) error {
+	safepassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+	if err != nil {
+		return err
+	}
+	user.Password = string(safepassword)
 	result := db.Create(user)
 	if result.Error != nil {
 		return result.Error
@@ -47,6 +53,14 @@ func CreateUser(db *gorm.DB, user *usermodel.User) error {
 
 // UpdateUser - update user record
 func UpdateUser(db *gorm.DB, user *usermodel.User) error {
+	cost, _ := bcrypt.Cost([]byte(user.Password))
+	if cost < 1 {
+		safepassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+		if err != nil {
+			return err
+		}
+		user.Password = string(safepassword)
+	}
 	result := db.Save(user)
 	if result.Error != nil {
 		return result.Error
