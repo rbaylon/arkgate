@@ -27,12 +27,14 @@ package subroutes
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
+	"github.com/rbaylon/arkgate/modules/localutils"
 	planmodel "github.com/rbaylon/arkgate/modules/plans/model"
 	"github.com/rbaylon/arkgate/modules/security"
 	submodel "github.com/rbaylon/arkgate/modules/subs/model"
@@ -79,6 +81,9 @@ func SubRouter(db submodel.Crud) chi.Router {
 			return
 		}
 		sub.ID = uint(id)
+		if _, err := localutils.B64StdDecode(sub.Password); err != nil {
+			sub.Password = localutils.B64StdEncode(sub.Password)
+		}
 		errupdate := db.Update(sub)
 		if int(sub.PlanID) > 0 {
 			planid := uint(sub.PlanID)
@@ -105,6 +110,7 @@ func SubRouter(db submodel.Crud) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
+		sub.Password = localutils.B64StdEncode(sub.Password)
 		erradd := db.Add(sub)
 		if int(sub.PlanID) > 0 {
 			planid := uint(sub.PlanID)
@@ -120,6 +126,10 @@ func SubRouter(db submodel.Crud) chi.Router {
 			}
 		}
 		if erradd == nil {
+			cmderr := localutils.SendCmd("HOSTNAME")
+			if cmderr != nil {
+				log.Println(cmderr)
+			}
 			render.JSON(w, r, sub)
 			return
 		}
