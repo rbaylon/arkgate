@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	ipmodel "github.com/rbaylon/arkgate/modules/ip/model"
+	iputils "github.com/rbaylon/arkgate/modules/localutils/ip"
 	"gorm.io/gorm"
 )
 
@@ -54,6 +55,7 @@ type Crud interface {
 	Update(iface *Interface) error
 	Delete(iface *Interface) error
 	GetByDevice(ifacename string) (*Interface, error)
+	PrepConfig() []string
 }
 
 type Storage struct {
@@ -63,6 +65,21 @@ type Storage struct {
 func New(db *gorm.DB) *Storage {
 	return &Storage{
 		DB: db,
+	}
+}
+
+func (s *Storage) PrepConfig() []string {
+	ifaces := s.GetAll()
+	for _, iface := range ifaces {
+		lines := []string{}
+		for i, ip := range iface.Ips {
+			cidr := iputils.StringToCidr(ip.Ip + "/" + ip.Prefix)
+			if i == 0 {
+				lines = append(lines, "inet "+cidr.GetIpv4WithMask)
+			} else {
+				lines = append(lines, "inet alias "+ip.Ip+" 255.255.255.255")
+			}
+		}
 	}
 }
 

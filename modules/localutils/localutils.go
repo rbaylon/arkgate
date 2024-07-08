@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"os"
 
 	"github.com/rbaylon/arkgate/database"
 )
@@ -44,6 +45,22 @@ func SendCmd(s string) error {
 	ret := string(buf[0:n])
 	if ret != "OK" {
 		return errors.New(ret)
+	}
+	return nil
+}
+
+func GenerateConfigFile(path *string, content []string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	for s := range content {
+		_, err = file.WriteString(data)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
