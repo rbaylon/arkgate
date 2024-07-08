@@ -27,26 +27,25 @@ package planroutes
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
-	"github.com/rbaylon/arkgate/modules/plans/controller"
-	"github.com/rbaylon/arkgate/modules/plans/model"
+	planmodel "github.com/rbaylon/arkgate/modules/plans/model"
 	"github.com/rbaylon/arkgate/modules/security"
 	"github.com/rbaylon/arkgate/utils"
-	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 var tokenAuth *jwtauth.JWTAuth
 
-func PlanRouter(db *gorm.DB) chi.Router {
+func PlanRouter(db planmodel.Crud) chi.Router {
 	r := chi.NewRouter()
 	r.Use(security.TokenRequired)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		res, errdb := plancontroller.GetPlans(db)
+		res, errdb := db.GetAll()
 		if errdb != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(errdb, "DB error", http.StatusInternalServerError))
 			return
@@ -59,7 +58,7 @@ func PlanRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid plan ID %s", chi.URLParam(r, "planId")), http.StatusBadRequest))
 			return
 		}
-		plan, err := plancontroller.GetPlanByID(db, id)
+		plan, err := db.GetById(uint(id))
 		if err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
 			return
@@ -78,7 +77,7 @@ func PlanRouter(db *gorm.DB) chi.Router {
 			return
 		}
 		plan.ID = uint(id)
-		err = plancontroller.UpdatePlan(db, plan)
+		err = db.Update(plan)
 		if err == nil {
 			render.JSON(w, r, plan)
 			return
@@ -91,7 +90,7 @@ func PlanRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		err := plancontroller.CreatePlan(db, plan)
+		err := db.Add(plan)
 		if err == nil {
 			render.JSON(w, r, plan)
 			return
@@ -110,7 +109,7 @@ func PlanRouter(db *gorm.DB) chi.Router {
 			return
 		}
 		plan.ID = uint(id)
-		err = plancontroller.DeletePlan(db, plan)
+		err = db.Delete(plan)
 		if err == nil {
 			render.JSON(w, r, plan)
 			return

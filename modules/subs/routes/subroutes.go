@@ -27,26 +27,27 @@ package subroutes
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
+	planmodel "github.com/rbaylon/arkgate/modules/plans/model"
 	"github.com/rbaylon/arkgate/modules/security"
-	"github.com/rbaylon/arkgate/modules/subs/controller"
-	"github.com/rbaylon/arkgate/modules/subs/model"
+	submodel "github.com/rbaylon/arkgate/modules/subs/model"
 	"github.com/rbaylon/arkgate/utils"
 	"gorm.io/gorm"
-	"net/http"
-	"strconv"
 )
 
 var tokenAuth *jwtauth.JWTAuth
 
-func SubRouter(db *gorm.DB) chi.Router {
+func SubRouter(db submodel.Crud) chi.Router {
 	r := chi.NewRouter()
 	r.Use(security.TokenRequired)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		res, errdb := subcontroller.GetSubs(db)
+		res, errdb := db.GetAll()
 		if errdb != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(errdb, "DB error", http.StatusInternalServerError))
 			return
@@ -59,7 +60,7 @@ func SubRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Invalid sub ID %s", chi.URLParam(r, "subId")), http.StatusBadRequest))
 			return
 		}
-		sub, err := subcontroller.GetSubByID(db, id)
+		sub, err := db.GetById(uint(id))
 		if err != nil {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
 			return
@@ -78,12 +79,25 @@ func SubRouter(db *gorm.DB) chi.Router {
 			return
 		}
 		sub.ID = uint(id)
-		err = subcontroller.UpdateSub(db, sub)
-		if err == nil {
+		errupdate := db.Update(sub)
+		if int(sub.PlanID) > 0 {
+			planid := uint(sub.PlanID)
+			dbconn := db.GetDB()
+			is := planmodel.New(dbconn)
+			plan, err := is.GetById(planid)
+			if err == nil {
+				dbconn.Model(plan).Association("Subs").Append(sub)
+				dbconn.Session(&gorm.Session{FullSaveAssociations: true}).Updates(plan)
+			} else {
+				sub.PlanID = 0
+				errupdate = db.Update(sub)
+			}
+		}
+		if errupdate == nil {
 			render.JSON(w, r, sub)
 			return
 		}
-		render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Error updating record for sub  ID %s", chi.URLParam(r, "subId")), http.StatusBadRequest))
+		render.Render(w, r, utils.ErrInvalidRequest(errupdate, fmt.Sprintf("Error updating record for sub  ID %s", chi.URLParam(r, "subId")), http.StatusBadRequest))
 	})
 	r.Post("/create", func(w http.ResponseWriter, r *http.Request) {
 		sub := &submodel.Sub{}
@@ -91,12 +105,25 @@ func SubRouter(db *gorm.DB) chi.Router {
 			render.Render(w, r, utils.ErrInvalidRequest(err, "Bind error", http.StatusBadRequest))
 			return
 		}
-		err := subcontroller.CreateSub(db, sub)
-		if err == nil {
+		erradd := db.Add(sub)
+		if int(sub.PlanID) > 0 {
+			planid := uint(sub.PlanID)
+			dbconn := db.GetDB()
+			is := planmodel.New(dbconn)
+			plan, err := is.GetById(planid)
+			if err == nil {
+				dbconn.Model(plan).Association("Subs").Append(sub)
+				dbconn.Session(&gorm.Session{FullSaveAssociations: true}).Updates(plan)
+			} else {
+				sub.PlanID = 0
+				erradd = db.Update(sub)
+			}
+		}
+		if erradd == nil {
 			render.JSON(w, r, sub)
 			return
 		}
-		render.Render(w, r, utils.ErrInvalidRequest(err, "DB error", http.StatusInternalServerError))
+		render.Render(w, r, utils.ErrInvalidRequest(erradd, "DB error", http.StatusInternalServerError))
 	})
 	r.Delete("/{subId}", func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.Atoi(chi.URLParam(r, "subId"))
@@ -110,7 +137,7 @@ func SubRouter(db *gorm.DB) chi.Router {
 			return
 		}
 		sub.ID = uint(id)
-		err = subcontroller.DeleteSub(db, sub)
+		err = db.Delete(sub)
 		if err == nil {
 			render.JSON(w, r, sub)
 			return

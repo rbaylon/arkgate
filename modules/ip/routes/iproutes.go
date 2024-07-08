@@ -79,12 +79,25 @@ func IpRouter(db ipmodel.Crud) chi.Router {
 			return
 		}
 		ip.ID = uint(id)
-		err = db.Update(ip)
-		if err == nil {
+		erripupdate := db.Update(ip)
+		if int(ip.InterfaceID) > 0 {
+			ifaceid := uint(ip.InterfaceID)
+			dbconn := db.GetDB()
+			is := interfacemodel.New(dbconn)
+			iface, err := is.GetById(ifaceid)
+			if err == nil {
+				dbconn.Model(iface).Association("Ips").Append(ip)
+				dbconn.Session(&gorm.Session{FullSaveAssociations: true}).Updates(iface)
+			} else {
+				ip.InterfaceID = 0
+				erripupdate = db.Update(ip)
+			}
+		}
+		if erripupdate == nil {
 			render.JSON(w, r, ip)
 			return
 		}
-		render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Error updating record for ip  ID %s", chi.URLParam(r, "ipId")), http.StatusBadRequest))
+		render.Render(w, r, utils.ErrInvalidRequest(erripupdate, fmt.Sprintf("Error updating record for ip  ID %s", chi.URLParam(r, "ipId")), http.StatusBadRequest))
 	})
 	r.Post("/create", func(w http.ResponseWriter, r *http.Request) {
 		ip := &ipmodel.Ip{}
@@ -101,9 +114,10 @@ func IpRouter(db ipmodel.Crud) chi.Router {
 			if err == nil {
 				dbconn.Model(iface).Association("Ips").Append(ip)
 				dbconn.Session(&gorm.Session{FullSaveAssociations: true}).Updates(iface)
+			} else {
+				ip.InterfaceID = 0
+				erripadd = db.Update(ip)
 			}
-			ip.InterfaceID = 0
-			erripadd = db.Update(ip)
 		}
 		if erripadd == nil {
 			render.JSON(w, r, ip)

@@ -63,6 +63,8 @@ func main() {
 	firewallStore := firewallmodel.New(db)
 	ifaceStore := interfacemodel.New(db)
 	ipStore := ipmodel.New(db)
+	planStore := planmodel.New(db)
+	subStore := submodel.New(db)
 
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
@@ -75,8 +77,8 @@ func main() {
 
 	// Mount the user sub-router:
 	r.Mount("/api/v1/users", userroutes.UserRouter(userStore))
-	r.Mount("/api/v1/plans", planroutes.PlanRouter(db))
-	r.Mount("/api/v1/subs", subroutes.SubRouter(db))
+	r.Mount("/api/v1/plans", planroutes.PlanRouter(planStore))
+	r.Mount("/api/v1/subs", subroutes.SubRouter(subStore))
 	r.Mount("/api/v1/ips", iproutes.IpRouter(ipStore))
 	r.Mount("/api/v1/interfaces", interfaceroutes.InterfaceRouter(ifaceStore))
 	r.Mount("/api/v1/queue", queueroutes.QueueRouter(firewallStore))
