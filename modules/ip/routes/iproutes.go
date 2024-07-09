@@ -88,6 +88,7 @@ func IpRouter(db ipmodel.Crud) chi.Router {
 			if err == nil {
 				dbconn.Model(iface).Association("Ips").Append(ip)
 				dbconn.Session(&gorm.Session{FullSaveAssociations: true}).Updates(iface)
+				erripupdate = is.WriteOneConfig(iface.ID)
 			} else {
 				ip.InterfaceID = 0
 				erripupdate = db.Update(ip)
@@ -114,6 +115,7 @@ func IpRouter(db ipmodel.Crud) chi.Router {
 			if err == nil {
 				dbconn.Model(iface).Association("Ips").Append(ip)
 				dbconn.Session(&gorm.Session{FullSaveAssociations: true}).Updates(iface)
+				erripadd = is.WriteOneConfig(iface.ID)
 			} else {
 				ip.InterfaceID = 0
 				erripadd = db.Update(ip)

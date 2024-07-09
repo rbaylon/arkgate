@@ -49,15 +49,15 @@ func SendCmd(s string) error {
 	return nil
 }
 
-func GenerateConfigFile(path *string, content []string) error {
+func GenerateConfigFile(path string, content []string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	for s := range content {
-		_, err = file.WriteString(data)
+	for _, s := range content {
+		_, err = file.WriteString(s)
 		if err != nil {
 			return err
 		}

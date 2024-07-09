@@ -11,19 +11,22 @@ type Cidr struct {
 	NetAddress *net.IPNet
 }
 
-func (c *Cidr) PrefixToMask() string {
-	if len(m) != 4 {
-		return errors.New("Error: IPv4 only.")
-	}
-	return fmt.Sprintf("%d.%d.%d.%d", m[0], m[1], m[2], m[3])
-}
-
-func (c *Cidr) GetIpv4WithMask(s string) string {
+func (c *Cidr) PrefixToMask() (*string, error) {
 	m := c.NetAddress.Mask
 	if len(m) != 4 {
-		return errors.New("Error: IPv4 only.")
+		return nil, errors.New("Error: IPv4 only.")
 	}
-	return fmt.Sprintf("%s %d.%d.%d.%d", c.Ip.String(), m[0], m[1], m[2], m[3])
+	mask := fmt.Sprintf("%d.%d.%d.%d", m[0], m[1], m[2], m[3])
+	return &mask, nil
+}
+
+func (c *Cidr) GetIpv4WithMask() (*string, error) {
+	m := c.NetAddress.Mask
+	if len(m) != 4 {
+		return nil, errors.New("Error: IPv4 only.")
+	}
+	mask := fmt.Sprintf("%s %d.%d.%d.%d", c.Ip.String(), m[0], m[1], m[2], m[3])
+	return &mask, nil
 }
 
 func StringToCidr(s string) (*Cidr, error) {
@@ -32,5 +35,5 @@ func StringToCidr(s string) (*Cidr, error) {
 		return nil, err
 	}
 	cidr := &Cidr{Ip: ip, NetAddress: netaddr}
-	return cidr
+	return cidr, nil
 }

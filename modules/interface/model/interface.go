@@ -5,8 +5,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 
 	ipmodel "github.com/rbaylon/arkgate/modules/ip/model"
+	"github.com/rbaylon/arkgate/modules/localutils"
 	iputils "github.com/rbaylon/arkgate/modules/localutils/ip"
 	"gorm.io/gorm"
 )
@@ -55,7 +57,8 @@ type Crud interface {
 	Update(iface *Interface) error
 	Delete(iface *Interface) error
 	GetByDevice(ifacename string) (*Interface, error)
-	PrepConfig() []string
+	WriteAllConfig() error
+	WriteOneConfig(id uint) error
 }
 
 type Storage struct {
@@ -68,19 +71,76 @@ func New(db *gorm.DB) *Storage {
 	}
 }
 
-func (s *Storage) PrepConfig() []string {
-	ifaces := s.GetAll()
+func (s *Storage) WriteAllConfig() error {
+	ifaces, err := s.GetAll()
+	if err != nil {
+		return err
+	}
 	for _, iface := range ifaces {
 		lines := []string{}
-		for i, ip := range iface.Ips {
-			cidr := iputils.StringToCidr(ip.Ip + "/" + ip.Prefix)
-			if i == 0 {
-				lines = append(lines, "inet "+cidr.GetIpv4WithMask)
+		for _, ip := range iface.Ips {
+			cidr, err := iputils.StringToCidr(ip.Ip + "/" + strconv.Itoa(ip.Prefix))
+			if err != nil {
+				return err
+			}
+			if ip.Prefix != 32 && ip.Prefix != 128 {
+				ipmask, err := cidr.GetIpv4WithMask()
+				if err == nil {
+					lines = append(lines, "inet "+*ipmask+"\n")
+				} else {
+					lines = append(lines, "inet6 "+ip.Ip+" "+strconv.Itoa(ip.Prefix)+"\n")
+				}
 			} else {
-				lines = append(lines, "inet alias "+ip.Ip+" 255.255.255.255")
+				_, err := cidr.GetIpv4WithMask()
+				if err == nil {
+					lines = append(lines, "inet alias "+ip.Ip+" 255.255.255.255\n")
+				} else {
+					lines = append(lines, "inet6 alias "+ip.Ip+" 128\n")
+				}
+			}
+		}
+		fileloc := "/tmp/hostname." + iface.Device
+		err := localutils.GenerateConfigFile(fileloc, lines)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Storage) WriteOneConfig(id uint) error {
+	iface, err := s.GetById(id)
+	if err != nil {
+		return err
+	}
+	lines := []string{}
+	for _, ip := range iface.Ips {
+		cidr, err := iputils.StringToCidr(ip.Ip + "/" + strconv.Itoa(ip.Prefix))
+		if err != nil {
+			return err
+		}
+		if ip.Prefix != 32 && ip.Prefix != 128 {
+			ipmask, err := cidr.GetIpv4WithMask()
+			if err == nil {
+				lines = append(lines, "inet "+*ipmask+"\n")
+			} else {
+				lines = append(lines, "inet6 "+ip.Ip+" "+strconv.Itoa(ip.Prefix)+"\n")
+			}
+		} else {
+			_, err := cidr.GetIpv4WithMask()
+			if err == nil {
+				lines = append(lines, "inet alias "+ip.Ip+" 255.255.255.255\n")
+			} else {
+				lines = append(lines, "inet6 alias "+ip.Ip+" 128\n")
 			}
 		}
 	}
+	fileloc := "/tmp/hostname." + iface.Device
+	err = localutils.GenerateConfigFile(fileloc, lines)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *Storage) Add(iface *Interface) error {

@@ -79,8 +79,11 @@ func InterfaceRouter(db interfacemodel.Crud) chi.Router {
 		iface.ID = uint(id)
 		err = db.Update(iface)
 		if err == nil {
-			render.JSON(w, r, iface)
-			return
+			err = db.WriteOneConfig(iface.ID)
+			if err == nil {
+				render.JSON(w, r, iface)
+				return
+			}
 		}
 		render.Render(w, r, utils.ErrInvalidRequest(err, fmt.Sprintf("Error updating record for iface  ID %s", chi.URLParam(r, "ifaceId")), http.StatusBadRequest))
 	})
