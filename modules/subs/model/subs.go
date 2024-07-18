@@ -13,7 +13,9 @@ type Sub struct {
 	Username string `json:"username" bson:"username"`
 	Password string `json:"password" bson:"password"`
 	FramedIp string `json:"fip" bson:"fip"`
-	PlanID   uint64 `json:"planid" bson:"planid"`
+	PlanID   uint   `json:"planid" bson:"planid"`
+	NpppdID  uint   `json:"npppdid" bson:"npppdid"`
+	IsActive bool   `json:"isactive" bson:"isactive"`
 }
 
 // MigrateDB - Create the table if not exist in DB

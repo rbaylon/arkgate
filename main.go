@@ -29,6 +29,10 @@ import (
 	interfaceroutes "github.com/rbaylon/arkgate/modules/interface/routes"
 	ipmodel "github.com/rbaylon/arkgate/modules/ip/model"
 	iproutes "github.com/rbaylon/arkgate/modules/ip/routes"
+	npppdmodel "github.com/rbaylon/arkgate/modules/npppd/model"
+	npppdroutes "github.com/rbaylon/arkgate/modules/npppd/routes"
+	ospfdmodel "github.com/rbaylon/arkgate/modules/ospfd/model"
+	ospfdroutes "github.com/rbaylon/arkgate/modules/ospfd/routes"
 	planmodel "github.com/rbaylon/arkgate/modules/plans/model"
 	planroutes "github.com/rbaylon/arkgate/modules/plans/routes"
 	"github.com/rbaylon/arkgate/modules/security"
@@ -58,6 +62,8 @@ func main() {
 	ipmodel.MigrateDB(db)
 	interfacemodel.MigrateDB(db)
 	firewallmodel.MigrateDB(db)
+	npppdmodel.MigrateDB(db)
+	ospfdmodel.MigrateDB(db)
 
 	userStore := usermodel.New(db)
 	firewallStore := firewallmodel.New(db)
@@ -65,6 +71,8 @@ func main() {
 	ipStore := ipmodel.New(db)
 	planStore := planmodel.New(db)
 	subStore := submodel.New(db)
+	npppdStore := npppdmodel.New(db)
+	ospfdStore := ospfdmodel.New(db)
 
 	r := chi.NewRouter()
 	r.Use(render.SetContentType(render.ContentTypeJSON))
@@ -82,7 +90,9 @@ func main() {
 	r.Mount("/api/v1/ips", iproutes.IpRouter(ipStore))
 	r.Mount("/api/v1/interfaces", interfaceroutes.InterfaceRouter(ifaceStore))
 	r.Mount("/api/v1/queue", queueroutes.QueueRouter(firewallStore))
+	r.Mount("/api/v1/npppds", npppdroutes.NpppdRouter(npppdStore))
 	r.Mount("/api/v1/firewall", firewallroutes.FirewallRouter(firewallStore))
+	r.Mount("/api/v1/ospfd", ospfdroutes.OspfdRouter(ospfdStore))
 
 	http.ListenAndServe(fmt.Sprintf("%s:%s", app_ip, app_port), r)
 }
